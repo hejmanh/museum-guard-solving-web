@@ -13,3 +13,12 @@ export interface Door {
 }
 
 export type Algorithm = 'greedy' | 'genetic' | 'pso';
+
+export interface SolveResult {
+  guardDoorIds: number[];
+  description: string;
+}
+
+export interface Solver {
+  solve(rooms: Room[], doors: Door[]): SolveResult;
+}

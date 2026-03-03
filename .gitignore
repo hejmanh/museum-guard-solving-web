@@ -10,6 +10,9 @@
 !.yarn/releases
 !.yarn/versions
 
+#plans
+/docs/plans/
+
 # testing
 /coverage
 

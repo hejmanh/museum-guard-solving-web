@@ -4,7 +4,8 @@ import Image from "next/image";
 import { useState } from "react";
 import Map from "@/shared/components/Map";
 import DoorList from "@/shared/components/DoorList";
-import { Room, Door, Algorithm } from "@/shared/types";
+import { Room, Door, Algorithm, Solver, SolveResult } from "@/shared/types";
+import { GreedySolver } from "@/shared/solvers/GreedySolver";
 
 export default function Home() {
   const [rooms, setRooms] = useState<Room[]>([
@@ -15,8 +16,10 @@ export default function Home() {
   const [nextRoomId, setNextRoomId] = useState(3);
   const [nextDoorId, setNextDoorId] = useState(1);
   const [selectedAlgorithm, setSelectedAlgorithm] = useState<Algorithm>('greedy');
+  const [solveResult, setSolveResult] = useState<SolveResult | null>(null);
 
   const handleAddRoom = () => {
+    setSolveResult(null);
     // Find the lowest available ID
     const existingIds = rooms.map(room => room.id).sort((a, b) => a - b);
     let newId = 1;
@@ -52,6 +55,7 @@ export default function Home() {
   };
 
   const handleAddDoor = (room1Id: number, room2Id: number) => {
+    setSolveResult(null);
     // Check if rooms exist
     const room1Exists = rooms.some((r) => r.id === room1Id);
     const room2Exists = rooms.some((r) => r.id === room2Id);
@@ -92,13 +96,51 @@ export default function Home() {
   };
 
   const handleDeleteRoom = (id: number) => {
+    setSolveResult(null);
     setRooms(rooms.filter((room) => room.id !== id));
     // Also delete doors connected to this room
     setDoors(doors.filter((door) => door.room1Id !== id && door.room2Id !== id));
   };
 
   const handleDeleteDoor = (id: number) => {
+    setSolveResult(null);
     setDoors(doors.filter((door) => door.id !== id));
+  };
+
+  const handleRandomGraph = () => {
+    const roomCount = Math.floor(Math.random() * 6) + 3; // 3–8 rooms
+    const newRooms: Room[] = Array.from({ length: roomCount }, (_, i) => ({
+      id: i + 1,
+      x: 20 + Math.random() * 400,
+      y: 20 + Math.random() * 300,
+      width: 60,
+      height: 60,
+    }));
+
+    const newDoors: Door[] = [];
+    let doorId = 1;
+
+    // Ensure connectivity: chain all rooms first
+    for (let i = 1; i < roomCount; i++) {
+      newDoors.push({ id: doorId++, room1Id: i, room2Id: i + 1 });
+    }
+
+    // Add extra random edges (up to roomCount extra)
+    for (let i = 0; i < roomCount; i++) {
+      const a = Math.floor(Math.random() * roomCount) + 1;
+      const b = Math.floor(Math.random() * roomCount) + 1;
+      if (a !== b && !newDoors.some(
+        (d) => (d.room1Id === a && d.room2Id === b) || (d.room1Id === b && d.room2Id === a)
+      )) {
+        newDoors.push({ id: doorId++, room1Id: a, room2Id: b });
+      }
+    }
+
+    setRooms(newRooms);
+    setDoors(newDoors);
+    setNextRoomId(roomCount + 1);
+    setNextDoorId(doorId);
+    setSolveResult(null);
   };
 
   const handleReset = () => {
@@ -113,7 +155,15 @@ export default function Home() {
   };
 
   const handleSolveOptimization = () => {
-    alert(`chua lam hihi`);
+    const solvers: Partial<Record<Algorithm, Solver>> = {
+      greedy: new GreedySolver(),
+    };
+    const solver = solvers[selectedAlgorithm];
+    if (!solver) {
+      alert(`Algorithm "${selectedAlgorithm}" not yet implemented.`);
+      return;
+    }
+    setSolveResult(solver.solve(rooms, doors));
   };
 
   return (
@@ -164,6 +214,12 @@ export default function Home() {
         {/* Top Control Bar */}
         <div className="flex portrait:justify-center landscape:justify-end gap-1 sm:gap-2 mb-2 sm:mb-4 flex-wrap">
           <button
+            onClick={handleRandomGraph}
+            className="px-2 sm:px-3 py-1 sm:py-2 bg-purple-500 text-white text-xs sm:text-sm font-semibold rounded hover:bg-purple-600 transition-colors"
+          >
+            Random Graph
+          </button>
+          <button
             onClick={handleAddRoom}
             className="px-2 sm:px-3 py-1 sm:py-2 bg-blue-500 text-white text-xs sm:text-sm font-semibold rounded hover:bg-blue-600 transition-colors"
           >
@@ -197,10 +253,16 @@ export default function Home() {
             Reset
           </button>
         </div>
+        {solveResult && (
+          <div className="mb-2 sm:mb-3 p-2 sm:p-3 bg-amber-50 border border-amber-300 rounded text-xs sm:text-sm text-gray-800 whitespace-pre-wrap">
+            {solveResult.description}
+          </div>
+        )}
         <div className="flex-1 min-h-[300px] portrait:min-h-[400px]">
           <Map
             rooms={rooms}
             doors={doors}
+            guardDoorIds={solveResult?.guardDoorIds ?? []}
             onUpdateRoom={handleUpdateRoom}
             onDeleteRoom={handleDeleteRoom}
             onDeleteDoor={handleDeleteDoor}

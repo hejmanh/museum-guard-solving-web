@@ -7,12 +7,13 @@ import DoorEdge from './DoorEdge';
 interface MapProps {
   rooms: Room[];
   doors: Door[];
+  guardDoorIds: number[];
   onUpdateRoom: (id: number, updates: Partial<Room>) => void;
   onDeleteRoom: (id: number) => void;
   onDeleteDoor: (id: number) => void;
 }
 
-export default function Map({ rooms, doors, onUpdateRoom, onDeleteRoom, onDeleteDoor }: MapProps) {
+export default function Map({ rooms, doors, guardDoorIds, onUpdateRoom, onDeleteRoom, onDeleteDoor }: MapProps) {
   return (
     <div className="relative w-full h-full bg-gray-50 border-2 border-gray-300 rounded overflow-hidden">
       {/* SVG layer for doors (edges) */}
@@ -24,6 +25,7 @@ export default function Map({ rooms, doors, onUpdateRoom, onDeleteRoom, onDelete
               door={door}
               rooms={rooms}
               onDelete={onDeleteDoor}
+              isGuarded={guardDoorIds.includes(door.id)}
             />
           ))}
         </g>

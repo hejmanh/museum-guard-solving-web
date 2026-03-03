@@ -6,9 +6,10 @@ interface DoorEdgeProps {
   door: Door;
   rooms: Room[];
   onDelete: (id: number) => void;
+  isGuarded?: boolean;
 }
 
-export default function DoorEdge({ door, rooms, onDelete }: DoorEdgeProps) {
+export default function DoorEdge({ door, rooms, onDelete, isGuarded = false }: DoorEdgeProps) {
   const room1 = rooms.find((r) => r.id === door.room1Id);
   const room2 = rooms.find((r) => r.id === door.room2Id);
 
@@ -30,8 +31,8 @@ export default function DoorEdge({ door, rooms, onDelete }: DoorEdgeProps) {
       y1={y1}
       x2={x2}
       y2={y2}
-      stroke="#3B82F6"
-      strokeWidth="2"
+      stroke={isGuarded ? '#F59E0B' : '#3B82F6'}
+      strokeWidth={isGuarded ? '3' : '2'}
       className="cursor-pointer hover:stroke-blue-600"
       onDoubleClick={handleDoubleClick}
     />
