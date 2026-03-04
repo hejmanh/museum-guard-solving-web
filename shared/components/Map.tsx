@@ -14,6 +14,8 @@ interface MapProps {
 }
 
 export default function Map({ rooms, doors, guardDoorIds, onUpdateRoom, onDeleteRoom, onDeleteDoor }: MapProps) {
+  const guardedDoorSet = new Set(guardDoorIds);
+
   return (
     <div className="relative w-full h-full bg-gray-50 border-2 border-gray-300 rounded overflow-hidden">
       {/* SVG layer for doors (edges) */}
@@ -25,7 +27,7 @@ export default function Map({ rooms, doors, guardDoorIds, onUpdateRoom, onDelete
               door={door}
               rooms={rooms}
               onDelete={onDeleteDoor}
-              isGuarded={guardDoorIds.includes(door.id)}
+              isGuarded={guardedDoorSet.has(door.id)}
             />
           ))}
         </g>

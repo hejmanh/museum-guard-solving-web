@@ -1,12 +1,13 @@
-import { Room, Door, SolveResult, Solver } from '../types';
+import { SolveInput, SolveOutput, SolveResult, Solver } from '../types';
 
 export class GreedySolver implements Solver {
-  solve(rooms: Room[], doors: Door[]): SolveResult {
+  solve(input: SolveInput): SolveOutput {
+    const { rooms, doors } = input;
     const uncovered = new Set(rooms.map((r) => r.id));
     const guardDoorIds: number[] = [];
 
     while (uncovered.size > 0) {
-      let bestDoor: Door | null = null;
+      let bestDoor = null;
       let bestScore = -1;
 
       for (const door of doors) {
@@ -26,16 +27,9 @@ export class GreedySolver implements Solver {
       uncovered.delete(bestDoor.room2Id);
     }
 
-    const placementLines = guardDoorIds.map((id) => {
-      const door = doors.find((d) => d.id === id)!;
-      return `Door ${door.id} (R${door.room1Id} ↔ R${door.room2Id})`;
-    });
-
-    const description =
-      guardDoorIds.length === 0
-        ? 'No guards needed (no rooms or no doors).'
-        : `Guards placed: ${guardDoorIds.length}\n${placementLines.join(', ')}`;
-
-    return { guardDoorIds, description };
+    return {
+      nbrOfResults: 1,
+      results: [{ guardDoorIds }],
+    };
   }
 }
