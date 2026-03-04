@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useState } from "react";
 import Map from "@/shared/components/Map";
 import DoorList from "@/shared/components/DoorList";
-import { Room, Door, Algorithm, Solver, SolveResult } from "@/shared/types";
+import { Room, Door, Algorithm, Solver, SolveOutput, SolveInput } from "@/shared/types";
 import { GreedySolver } from "@/shared/solvers/GreedySolver";
 import { formatSolveOutputDescription } from "@/shared/utils/formatSolveOutputDescription";
 
@@ -17,7 +17,7 @@ export default function Home() {
   const [nextRoomId, setNextRoomId] = useState(3);
   const [nextDoorId, setNextDoorId] = useState(1);
   const [selectedAlgorithm, setSelectedAlgorithm] = useState<Algorithm>('greedy');
-  const [solveResult, setSolveResult] = useState<SolveResult | null>(null);
+  const [solveResult, setSolveResult] = useState<SolveOutput | null>(null);
   const [solveDescription, setSolveDescription] = useState<string | null>(null);
 
   const handleAddRoom = () => {
@@ -170,9 +170,17 @@ export default function Home() {
       alert(`Algorithm "${selectedAlgorithm}" not yet implemented.`);
       return;
     }
-    const result = solver.solve(rooms, doors);
-    setSolveResult(result);
-    setSolveDescription(formatSolveOutputDescription(result.guardDoorIds, doors));
+    
+    const solveInput: SolveInput =
+      selectedAlgorithm === 'greedy'
+        ? { rooms, doors, algorithm: 'greedy' }
+        : { rooms, doors, algorithm: 'genetic', nbrOfShifts: 5, shiftsPriorities: [] };
+    
+    const output = solver.solve(solveInput);
+    setSolveResult(output);
+    // Use the first result from the output
+    const guardDoorIds = output.results[0]?.guardDoorIds || [];
+    setSolveDescription(formatSolveOutputDescription(guardDoorIds, doors));
   };
 
   return (
@@ -211,6 +219,7 @@ export default function Home() {
             <li>Drag the bottom-right corners to resize rooms</li>
             <li>Double-click a room to delete it</li>
             <li>Double-click an edge to delete a door</li>
+            <li>Select <strong>Genetic</strong> algorithm to configure priorities for different rooms or get multiple guard shifting solutions</li>
           </ul>
         </section>
 
@@ -247,7 +256,6 @@ export default function Home() {
           >
             <option value="greedy">Greedy</option>
             <option value="genetic">Genetic</option>
-            <option value="pso">PSO</option>
           </select>
           <button
             onClick={handleSolveOptimization}
@@ -271,7 +279,7 @@ export default function Home() {
           <Map
             rooms={rooms}
             doors={doors}
-            guardDoorIds={solveResult?.guardDoorIds ?? []}
+            guardDoorIds={solveResult?.results[0]?.guardDoorIds ?? []}
             onUpdateRoom={handleUpdateRoom}
             onDeleteRoom={handleDeleteRoom}
             onDeleteDoor={handleDeleteDoor}
