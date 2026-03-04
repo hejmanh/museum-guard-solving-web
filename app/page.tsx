@@ -6,6 +6,7 @@ import Map from "@/shared/components/Map";
 import DoorList from "@/shared/components/DoorList";
 import { Room, Door, Algorithm, Solver, SolveResult } from "@/shared/types";
 import { GreedySolver } from "@/shared/solvers/GreedySolver";
+import { formatSolveOutputDescription } from "@/shared/utils/formatSolveOutputDescription";
 
 export default function Home() {
   const [rooms, setRooms] = useState<Room[]>([
@@ -17,9 +18,11 @@ export default function Home() {
   const [nextDoorId, setNextDoorId] = useState(1);
   const [selectedAlgorithm, setSelectedAlgorithm] = useState<Algorithm>('greedy');
   const [solveResult, setSolveResult] = useState<SolveResult | null>(null);
+  const [solveDescription, setSolveDescription] = useState<string | null>(null);
 
   const handleAddRoom = () => {
     setSolveResult(null);
+    setSolveDescription(null);
     // Find the lowest available ID
     const existingIds = rooms.map(room => room.id).sort((a, b) => a - b);
     let newId = 1;
@@ -56,6 +59,7 @@ export default function Home() {
 
   const handleAddDoor = (room1Id: number, room2Id: number) => {
     setSolveResult(null);
+    setSolveDescription(null);
     // Check if rooms exist
     const room1Exists = rooms.some((r) => r.id === room1Id);
     const room2Exists = rooms.some((r) => r.id === room2Id);
@@ -97,6 +101,7 @@ export default function Home() {
 
   const handleDeleteRoom = (id: number) => {
     setSolveResult(null);
+    setSolveDescription(null);
     setRooms(rooms.filter((room) => room.id !== id));
     // Also delete doors connected to this room
     setDoors(doors.filter((door) => door.room1Id !== id && door.room2Id !== id));
@@ -104,6 +109,7 @@ export default function Home() {
 
   const handleDeleteDoor = (id: number) => {
     setSolveResult(null);
+    setSolveDescription(null);
     setDoors(doors.filter((door) => door.id !== id));
   };
 
@@ -141,6 +147,7 @@ export default function Home() {
     setNextRoomId(roomCount + 1);
     setNextDoorId(doorId);
     setSolveResult(null);
+    setSolveDescription(null);
   };
 
   const handleReset = () => {
@@ -163,7 +170,9 @@ export default function Home() {
       alert(`Algorithm "${selectedAlgorithm}" not yet implemented.`);
       return;
     }
-    setSolveResult(solver.solve(rooms, doors));
+    const result = solver.solve(rooms, doors);
+    setSolveResult(result);
+    setSolveDescription(formatSolveOutputDescription(result.guardDoorIds, doors));
   };
 
   return (
@@ -253,9 +262,9 @@ export default function Home() {
             Reset
           </button>
         </div>
-        {solveResult && (
+        {solveDescription && (
           <div className="mb-2 sm:mb-3 p-2 sm:p-3 bg-amber-50 border border-amber-300 rounded text-xs sm:text-sm text-gray-800 whitespace-pre-wrap">
-            {solveResult.description}
+            {solveDescription}
           </div>
         )}
         <div className="flex-1 min-h-[300px] portrait:min-h-[400px]">

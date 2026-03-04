@@ -12,11 +12,15 @@ export interface Door {
   room2Id: number;
 }
 
-export type Algorithm = 'greedy' | 'genetic' | 'pso';
+export type Algorithm = 'greedy' | 'genetic';
+
+export interface SolveInput {
+  rooms: Room[];
+  doors: Door[];
+}
 
 export interface SolveResult {
   guardDoorIds: number[];
-  description: string;
 }
 
 export interface Solver {
