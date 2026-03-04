@@ -1,9 +1,12 @@
 'use client';
 
-import Image from "next/image";
 import { useState } from "react";
 import Map from "@/shared/components/Map";
 import DoorList from "@/shared/components/DoorList";
+import ControlBar from "@/shared/components/ControlBar";
+import IntroductionSection from "@/shared/components/IntroductionSection";
+import InstructionsSection from "@/shared/components/InstructionsSection";
+import SolveResultDisplay from "@/shared/components/SolveResultDisplay";
 import { Room, Door, Algorithm, Solver, SolveOutput, SolveInput } from "@/shared/types";
 import { GreedySolver } from "@/shared/solvers/GreedySolver";
 import { formatSolveOutputDescription } from "@/shared/utils/formatSolveOutputDescription";
@@ -187,41 +190,15 @@ export default function Home() {
     <div className="min-h-screen w-full bg-gradient-to-br from-slate-50 to-slate-100 portrait:flex portrait:flex-col landscape:flex landscape:flex-row">
       {/* Left Panel */}
       <div className="portrait:w-full portrait:h-[40vh] portrait:overflow-y-auto landscape:w-96 xl:w-[32rem] 2xl:w-[36rem] landscape:h-screen landscape:overflow-y-auto p-4 sm:p-6 bg-white portrait:border-b landscape:border-r border-gray-200 flex flex-col">
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2 sm:mb-4">
+        <h1 className="text-xl sm:text-xl font-bold text-gray-800 mb-2 sm:mb-4">
           Museum Guard Optimization
         </h1>
 
         {/* Introduction */}
-        <section className="mb-2 sm:mb-4">
-          <p className="text-xs sm:text-sm text-gray-700 leading-relaxed">
-            The Museum Guard Problem seeks to determine the minimum number of guards needed to monitor all rooms in a museum. 
-            This tool solves the problem using different algorithms: <strong>Greedy</strong>, <strong>Genetic</strong>, and <strong>PSO</strong> (Particle Swarm Optimization).
-          </p>
-        </section>
-
-        {/* Example Image - Hidden on mobile portrait for space */}
-        <section className="mb-2 sm:mb-4 portrait:hidden landscape:flex justify-center">
-          <div className="overflow-hidden">
-            <Image
-              src="/images/example.png"
-              alt="Museum guard problem example"
-              width={200} 
-              height={120} 
-            />
-          </div>
-        </section>
+        <IntroductionSection />
 
         {/* Instructions */}
-        <section className="mb-2 sm:mb-4">
-          <h3 className="text-sm sm:text-base font-semibold text-gray-800 mb-1 sm:mb-2">Instructions</h3>
-          <ul className="text-xs sm:text-sm text-gray-700 space-y-1 list-disc list-inside">
-            <li>Drag rooms to reposition them</li>
-            <li>Drag the bottom-right corners to resize rooms</li>
-            <li>Double-click a room to delete it</li>
-            <li>Double-click an edge to delete a door</li>
-            <li>Select <strong>Genetic</strong> algorithm to configure priorities for different rooms or get multiple guard shifting solutions</li>
-          </ul>
-        </section>
+        <InstructionsSection />
 
         {/* Door List */}
         <DoorList doors={doors} />
@@ -230,51 +207,16 @@ export default function Home() {
       {/* Right Panel - Map View */}
       <div className="portrait:w-full portrait:h-[60vh] landscape:flex-1 landscape:h-screen p-3 sm:p-6 flex flex-col bg-gray-50">
         {/* Top Control Bar */}
-        <div className="flex portrait:justify-center landscape:justify-end gap-1 sm:gap-2 mb-2 sm:mb-4 flex-wrap">
-          <button
-            onClick={handleRandomGraph}
-            className="px-2 sm:px-3 py-1 sm:py-2 bg-purple-500 text-white text-xs sm:text-sm font-semibold rounded hover:bg-purple-600 transition-colors"
-          >
-            Random Graph
-          </button>
-          <button
-            onClick={handleAddRoom}
-            className="px-2 sm:px-3 py-1 sm:py-2 bg-blue-500 text-white text-xs sm:text-sm font-semibold rounded hover:bg-blue-600 transition-colors"
-          >
-            Add Room
-          </button>
-          <button
-            onClick={handleAddDoorFromButton}
-            className="px-2 sm:px-3 py-1 sm:py-2 bg-blue-500 text-white text-xs sm:text-sm font-semibold rounded hover:bg-blue-600 transition-colors"
-          >
-            Add Door
-          </button>
-          <select
-            value={selectedAlgorithm}
-            onChange={(e) => setSelectedAlgorithm(e.target.value as Algorithm)}
-            className="px-2 sm:px-3 py-1 sm:py-2 pr-6 sm:pr-8 bg-white border border-gray-300 text-xs sm:text-sm font-semibold rounded hover:border-gray-400 transition-colors"
-          >
-            <option value="greedy">Greedy</option>
-            <option value="genetic">Genetic</option>
-          </select>
-          <button
-            onClick={handleSolveOptimization}
-            className="px-2 sm:px-3 py-1 sm:py-2 bg-emerald-500 text-white text-xs sm:text-sm font-semibold rounded hover:bg-emerald-600 transition-colors"
-          >
-            Solve
-          </button>
-          <button
-            onClick={handleReset}
-            className="px-2 sm:px-3 py-1 sm:py-2 bg-red-500 text-white text-xs sm:text-sm font-semibold rounded hover:bg-red-600 transition-colors"
-          >
-            Reset
-          </button>
-        </div>
-        {solveDescription && (
-          <div className="mb-2 sm:mb-3 p-2 sm:p-3 bg-amber-50 border border-amber-300 rounded text-xs sm:text-sm text-gray-800 whitespace-pre-wrap">
-            {solveDescription}
-          </div>
-        )}
+        <ControlBar
+          selectedAlgorithm={selectedAlgorithm}
+          onAlgorithmChange={setSelectedAlgorithm}
+          onRandomGraph={handleRandomGraph}
+          onAddRoom={handleAddRoom}
+          onAddDoor={handleAddDoorFromButton}
+          onSolve={handleSolveOptimization}
+          onReset={handleReset}
+        />
+        <SolveResultDisplay solveDescription={solveDescription} />
         <div className="flex-1 min-h-[300px] portrait:min-h-[400px]">
           <Map
             rooms={rooms}
