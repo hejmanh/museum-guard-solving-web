@@ -1,13 +1,16 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Map from "@/shared/components/Map";
 import DoorList from "@/shared/components/DoorList";
 import ControlBar from "@/shared/components/ControlBar";
 import IntroductionSection from "@/shared/components/IntroductionSection";
 import InstructionsSection from "@/shared/components/InstructionsSection";
 import SolveResultDisplay from "@/shared/components/SolveResultDisplay";
-import { Room, Door, Algorithm, Solver, SolveOutput, SolveInput } from "@/shared/types";
+import GeneticConfigModal from "@/shared/components/GeneticConfigModal";
+import ShiftsAndPrioritiesModal from "@/shared/components/ShiftsAndPrioritiesModal";
+import ShiftAndPriorityConfigSection from "@/shared/components/ShiftAndPriorityConfigSection";
+import { Room, Door, Algorithm, SolveOutput, SolveInput } from "@/shared/types";
 import { GreedySolver } from "@/shared/solvers/GreedySolver";
 import { formatSolveOutputDescription } from "@/shared/utils/formatSolveOutputDescription";
 
@@ -22,6 +25,20 @@ export default function Home() {
   const [selectedAlgorithm, setSelectedAlgorithm] = useState<Algorithm>('greedy');
   const [solveResult, setSolveResult] = useState<SolveOutput | null>(null);
   const [solveDescription, setSolveDescription] = useState<string | null>(null);
+
+  // Genetic algorithm UI state
+  const [showGeneticModal, setShowGeneticModal] = useState(false);
+  const [showShiftsModal, setShowShiftsModal] = useState(false);
+  const [geneticConfig, setGeneticConfig] = useState<{ nbrOfShifts: number; shiftsPriorities: number[][] } | null>(null);
+  const [currentResultIndex, setCurrentResultIndex] = useState(0);
+
+  // Update solve description when result index changes
+  useEffect(() => {
+    if (solveResult && currentResultIndex < solveResult.results.length) {
+      const guardDoorIds = solveResult.results[currentResultIndex]?.guardDoorIds || [];
+      setSolveDescription(formatSolveOutputDescription(guardDoorIds, doors));
+    }
+  }, [currentResultIndex, solveResult, doors]);
 
   const handleAddRoom = () => {
     setSolveResult(null);
@@ -149,8 +166,14 @@ export default function Home() {
     setDoors(newDoors);
     setNextRoomId(roomCount + 1);
     setNextDoorId(doorId);
+    
+    // clear any existing solve and genetic configuration state
     setSolveResult(null);
     setSolveDescription(null);
+    setShowGeneticModal(false);
+    setShowShiftsModal(false);
+    setGeneticConfig(null);
+    setCurrentResultIndex(0);
   };
 
   const handleReset = () => {
@@ -162,6 +185,60 @@ export default function Home() {
     setNextRoomId(3);
     setNextDoorId(1);
     setSelectedAlgorithm('greedy');
+    setSolveResult(null);
+    setSolveDescription(null);
+    setShowGeneticModal(false);
+    setShowShiftsModal(false);
+    setGeneticConfig(null);
+    setCurrentResultIndex(0);
+  };
+
+  const handleAlgorithmChange = (algorithm: Algorithm) => {
+    setSelectedAlgorithm(algorithm);
+    setSolveResult(null);
+    setSolveDescription(null);
+    setCurrentResultIndex(0);
+    // If switching to genetic, show the initial config modal
+    // If switching away from genetic, clear genetic UI state
+    if (algorithm === 'genetic') {
+      setShowGeneticModal(true);
+    } else {
+      setShowGeneticModal(false);
+      setShowShiftsModal(false);
+      setGeneticConfig(null);
+      setCurrentResultIndex(0);
+    }
+  };
+
+  const handleGeneticConfigYes = () => {
+    setShowGeneticModal(false);
+    setShowShiftsModal(true);
+  };
+
+  const handleGeneticConfigNo = () => {
+    setShowGeneticModal(false);
+    // Use default genetic config
+    const defaultConfig = {
+      nbrOfShifts: 1,
+      shiftsPriorities: [Array(rooms.length).fill(0)],
+    };
+    setGeneticConfig(defaultConfig);
+  };
+
+  const handleShiftsAndPrioritiesConfirm = (
+    nbrOfShifts: number,
+    shiftsPriorities: number[][]
+  ) => {
+    setGeneticConfig({ nbrOfShifts, shiftsPriorities });
+    setShowShiftsModal(false);
+  };
+
+  const handleShiftsAndPrioritiesClose = () => {
+    setShowShiftsModal(false);
+  };
+
+  const handleGeneticConfigButton = () => {
+    setShowShiftsModal(true);
   };
 
   const handleSolveOptimization = () => {
@@ -200,6 +277,14 @@ export default function Home() {
         {/* Instructions */}
         <InstructionsSection />
 
+        {/* Genetic Configuration Section */}
+        {geneticConfig && selectedAlgorithm === 'genetic' && (
+          <ShiftAndPriorityConfigSection
+            nbrOfShifts={geneticConfig.nbrOfShifts}
+            shiftsPriorities={geneticConfig.shiftsPriorities}
+          />
+        )}
+
         {/* Door List */}
         <DoorList doors={doors} />
       </div>
@@ -209,25 +294,61 @@ export default function Home() {
         {/* Top Control Bar */}
         <ControlBar
           selectedAlgorithm={selectedAlgorithm}
-          onAlgorithmChange={setSelectedAlgorithm}
+          onAlgorithmChange={handleAlgorithmChange}
           onRandomGraph={handleRandomGraph}
           onAddRoom={handleAddRoom}
           onAddDoor={handleAddDoorFromButton}
           onSolve={handleSolveOptimization}
           onReset={handleReset}
+          onGeneticConfig={handleGeneticConfigButton}
         />
+
         <SolveResultDisplay solveDescription={solveDescription} />
         <div className="flex-1 min-h-[300px] portrait:min-h-[400px]">
           <Map
             rooms={rooms}
             doors={doors}
-            guardDoorIds={solveResult?.results[0]?.guardDoorIds ?? []}
+            guardDoorIds={solveResult?.results[currentResultIndex]?.guardDoorIds ?? []}
             onUpdateRoom={handleUpdateRoom}
             onDeleteRoom={handleDeleteRoom}
             onDeleteDoor={handleDeleteDoor}
           />
         </div>
+
+        {/* Multi-result navigation */}
+        {solveResult && solveResult.nbrOfResults > 1 && (
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <button
+              onClick={() => setCurrentResultIndex((prev) => (prev > 0 ? prev - 1 : solveResult.nbrOfResults - 1))}
+              className="px-3 py-1 sm:px-4 sm:py-2 text-slate-400 text-sm sm:text-base font-semibold rounded hover:text-slate-500 transition-colors"
+            >
+              ◀
+            </button>
+            <span className="text-sm sm:text-base font-semibold text-gray-700">
+              Result {currentResultIndex + 1} of {solveResult.nbrOfResults}
+            </span>
+            <button
+              onClick={() => setCurrentResultIndex((prev) => (prev < solveResult.nbrOfResults - 1 ? prev + 1 : 0))}
+              className="px-3 py-1 sm:px-4 sm:py-2 text-slate-400 text-sm sm:text-base font-semibold rounded hover:text-slate-500 transition-colors"
+            >
+              ▶
+            </button>
+          </div>
+        )}
       </div>
+
+      {/* Modals */}
+      <GeneticConfigModal
+        isOpen={showGeneticModal}
+        onYes={handleGeneticConfigYes}
+        onNo={handleGeneticConfigNo}
+      />
+      <ShiftsAndPrioritiesModal
+        isOpen={showShiftsModal}
+        rooms={rooms}
+        onConfirm={handleShiftsAndPrioritiesConfirm}
+        onClose={handleShiftsAndPrioritiesClose}
+      />
     </div>
   );
 }

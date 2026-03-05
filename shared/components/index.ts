@@ -6,3 +6,6 @@ export { default as ControlBar } from './ControlBar';
 export { default as IntroductionSection } from './IntroductionSection';
 export { default as InstructionsSection } from './InstructionsSection';
 export { default as SolveResultDisplay } from './SolveResultDisplay';
+export { default as GeneticConfigModal } from './GeneticConfigModal';
+export { default as ShiftsAndPrioritiesModal } from './ShiftsAndPrioritiesModal';
+export { default as ShiftAndPriorityConfigSection } from './ShiftAndPriorityConfigSection';

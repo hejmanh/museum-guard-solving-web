@@ -8,6 +8,7 @@ interface ControlBarProps {
   onAddDoor: () => void;
   onSolve: () => void;
   onReset: () => void;
+  onGeneticConfig?: () => void;
 }
 
 export default function ControlBar({
@@ -18,6 +19,7 @@ export default function ControlBar({
   onAddDoor,
   onSolve,
   onReset,
+  onGeneticConfig,
 }: ControlBarProps) {
   return (
     <div className="flex portrait:justify-center landscape:justify-end gap-1 sm:gap-2 mb-2 sm:mb-4 flex-wrap">
@@ -47,6 +49,14 @@ export default function ControlBar({
         <option value="greedy">Greedy</option>
         <option value="genetic">Genetic</option>
       </select>
+      {selectedAlgorithm === 'genetic' && (
+        <button
+          onClick={onGeneticConfig}
+          className="px-2 sm:px-3 py-1 sm:py-2 bg-yellow-500 text-white text-xs sm:text-sm font-semibold rounded hover:bg-yellow-600 transition-colors"
+        >
+          Genetic Config
+        </button>
+      )}
       <button
         onClick={onSolve}
         className="px-2 sm:px-3 py-1 sm:py-2 bg-emerald-500 text-white text-xs sm:text-sm font-semibold rounded hover:bg-emerald-600 transition-colors"
