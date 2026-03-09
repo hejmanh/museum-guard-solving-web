@@ -13,6 +13,7 @@ import ShiftAndPriorityConfigSection from "@/shared/components/ShiftAndPriorityC
 import { Room, Door, Algorithm, SolveOutput, SolveInput } from "@/shared/types";
 import { GreedySolver } from "@/shared/solvers/GreedySolver";
 import { formatSolveOutputDescription } from "@/shared/utils/formatSolveOutputDescription";
+import { GeneticSolver } from "@/shared/solvers/GeneticSolver";
 
 export default function Home() {
   const [rooms, setRooms] = useState<Room[]>([
@@ -244,6 +245,7 @@ export default function Home() {
   const handleSolveOptimization = () => {
     const solvers: Partial<Record<Algorithm, Solver>> = {
       greedy: new GreedySolver(),
+      genetic: new GeneticSolver(),
     };
     const solver = solvers[selectedAlgorithm];
     if (!solver) {
