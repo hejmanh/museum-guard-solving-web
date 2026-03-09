@@ -589,25 +589,6 @@ export class GeneticSolver implements Solver {
     }
   }
 
-  // Prune: remove redundant doors while preserving full coverage.
-//   private prune(genes: boolean[], roomCount: number, doorPairs: DoorRoomIdxPair[]): void {
-//     if (!this.isFullyCovered(genes, roomCount, doorPairs)) return;
-
-//     const selected: number[] = [];
-//     for (let i = 0; i < genes.length; i++) if (genes[i]) selected.push(i);
-
-//     // Shuffle removal order
-//     for (let i = selected.length - 1; i > 0; i--) {
-//       const j = (Math.random() * (i + 1)) | 0;
-//       [selected[i], selected[j]] = [selected[j], selected[i]];
-//     }
-
-//     for (const idx of selected) {
-//       genes[idx] = false;
-//       if (!this.isFullyCovered(genes, roomCount, doorPairs)) genes[idx] = true;
-//     }
-//   }
-
     private prune(genes: boolean[], roomCount: number, doorPairs: DoorRoomIdxPair[]): void {
     if (roomCount <= 0 || genes.length === 0) return;
 
@@ -646,23 +627,6 @@ export class GeneticSolver implements Solver {
         if (b >= 0) coverageCounts[b]--;
     }
     }
- 
-
-//   private isFullyCovered(genes: boolean[], roomCount: number, doorPairs: DoorRoomIdxPair[]): boolean {
-//     if (roomCount <= 0) return true;
-//     const covered = Array<boolean>(roomCount).fill(false);
-
-//     for (let i = 0; i < genes.length; i++) {
-//       if (!genes[i]) continue;
-//       const [a, b] = doorPairs[i];
-//       if (a >= 0) covered[a] = true;
-//       if (b >= 0) covered[b] = true;
-//     }
-
-//     for (let r = 0; r < roomCount; r++) if (!covered[r]) return false;
-//     return true;
-//   }
-
 
     private isFullyCovered(genes: boolean[], roomCount: number, doorPairs: DoorRoomIdxPair[]): boolean {
     if (roomCount <= 0) return true;
