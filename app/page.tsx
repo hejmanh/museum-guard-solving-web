@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import Map from "@/shared/components/Map";
+import MuseumMap from "@/shared/components/Map";
 import DoorList from "@/shared/components/DoorList";
 import ControlBar from "@/shared/components/ControlBar";
 import IntroductionSection from "@/shared/components/IntroductionSection";
@@ -10,10 +10,35 @@ import SolveResultDisplay from "@/shared/components/SolveResultDisplay";
 import GeneticConfigModal from "@/shared/components/GeneticConfigModal";
 import ShiftsAndPrioritiesModal from "@/shared/components/ShiftsAndPrioritiesModal";
 import ShiftAndPriorityConfigSection from "@/shared/components/ShiftAndPriorityConfigSection";
-import { Room, Door, Algorithm, SolveOutput, SolveInput } from "@/shared/types";
+import { Room, Door, Algorithm, SolveOutput, SolveInput, Solver } from "@/shared/types";
 import { GreedySolver } from "@/shared/solvers/GreedySolver";
 import { formatSolveOutputDescription } from "@/shared/utils/formatSolveOutputDescription";
-import { GeneticSolver } from "@/shared/solvers/GeneticSolver";
+import { GeneticSolver, GenerationDebug } from "@/shared/solvers/GeneticSolver";
+
+function normalizeShiftsPriorities(
+  rooms: Room[],
+  nbrOfShifts: number,
+  shiftsPriorities: number[][]
+): number[][] {
+  return Array.from({ length: Math.max(1, nbrOfShifts) }, (_, s) => {
+    const row = shiftsPriorities?.[s] ?? [];
+    return rooms.map((_, i) => (Number.isFinite(row[i]) ? row[i] : 0));
+  });
+}
+
+function findIsolatedRoomIds(rooms: Room[], doors: Door[]): number[] {
+  const incidentCountByRoomId = new Map<number, number>();
+  for (const r of rooms) incidentCountByRoomId.set(r.id, 0);
+
+  for (const d of doors) {
+    incidentCountByRoomId.set(d.room1Id, (incidentCountByRoomId.get(d.room1Id) ?? 0) + 1);
+    incidentCountByRoomId.set(d.room2Id, (incidentCountByRoomId.get(d.room2Id) ?? 0) + 1);
+  }
+
+  return rooms
+    .filter((r) => (incidentCountByRoomId.get(r.id) ?? 0) === 0)
+    .map((r) => r.id);
+}
 
 export default function Home() {
   const [rooms, setRooms] = useState<Room[]>([
@@ -33,7 +58,9 @@ export default function Home() {
   const [geneticConfig, setGeneticConfig] = useState<{ nbrOfShifts: number; shiftsPriorities: number[][] } | null>(null);
   const [currentResultIndex, setCurrentResultIndex] = useState(0);
 
-  // Update solve description when result index changes
+  // GA debug UI state
+  const [gaDebugByShift, setGaDebugByShift] = useState<GenerationDebug[][] | null>(null);
+
   useEffect(() => {
     if (solveResult && currentResultIndex < solveResult.results.length) {
       const guardDoorIds = solveResult.results[currentResultIndex]?.guardDoorIds || [];
@@ -44,7 +71,8 @@ export default function Home() {
   const handleAddRoom = () => {
     setSolveResult(null);
     setSolveDescription(null);
-    // Find the lowest available ID
+    setGaDebugByShift(null);
+
     const existingIds = rooms.map(room => room.id).sort((a, b) => a - b);
     let newId = 1;
     for (const id of existingIds) {
@@ -54,7 +82,7 @@ export default function Home() {
 
     const newRoom: Room = {
       id: newId,
-      x: 20 + Math.random() * 150, 
+      x: 20 + Math.random() * 150,
       y: 20 + Math.random() * 150,
       width: 60,
       height: 60,
@@ -81,7 +109,8 @@ export default function Home() {
   const handleAddDoor = (room1Id: number, room2Id: number) => {
     setSolveResult(null);
     setSolveDescription(null);
-    // Check if rooms exist
+    setGaDebugByShift(null);
+
     const room1Exists = rooms.some((r) => r.id === room1Id);
     const room2Exists = rooms.some((r) => r.id === room2Id);
 
@@ -123,6 +152,8 @@ export default function Home() {
   const handleDeleteRoom = (id: number) => {
     setSolveResult(null);
     setSolveDescription(null);
+    setGaDebugByShift(null);
+
     setRooms(rooms.filter((room) => room.id !== id));
     // Also delete doors connected to this room
     setDoors(doors.filter((door) => door.room1Id !== id && door.room2Id !== id));
@@ -131,11 +162,13 @@ export default function Home() {
   const handleDeleteDoor = (id: number) => {
     setSolveResult(null);
     setSolveDescription(null);
+    setGaDebugByShift(null);
+
     setDoors(doors.filter((door) => door.id !== id));
   };
 
   const handleRandomGraph = () => {
-    const roomCount = Math.floor(Math.random() * 6) + 3; // 3–8 rooms
+    const roomCount = Math.floor(Math.random() * 6) + 3;
     const newRooms: Room[] = Array.from({ length: roomCount }, (_, i) => ({
       id: i + 1,
       x: 20 + Math.random() * 400,
@@ -167,14 +200,14 @@ export default function Home() {
     setDoors(newDoors);
     setNextRoomId(roomCount + 1);
     setNextDoorId(doorId);
-    
-    // clear any existing solve and genetic configuration state
+
     setSolveResult(null);
     setSolveDescription(null);
     setShowGeneticModal(false);
     setShowShiftsModal(false);
     setGeneticConfig(null);
     setCurrentResultIndex(0);
+    setGaDebugByShift(null);
   };
 
   const handleReset = () => {
@@ -192,6 +225,7 @@ export default function Home() {
     setShowShiftsModal(false);
     setGeneticConfig(null);
     setCurrentResultIndex(0);
+    setGaDebugByShift(null);
   };
 
   const handleAlgorithmChange = (algorithm: Algorithm) => {
@@ -199,8 +233,8 @@ export default function Home() {
     setSolveResult(null);
     setSolveDescription(null);
     setCurrentResultIndex(0);
-    // If switching to genetic, show the initial config modal
-    // If switching away from genetic, clear genetic UI state
+    setGaDebugByShift(null);
+
     if (algorithm === 'genetic') {
       setShowGeneticModal(true);
     } else {
@@ -243,27 +277,74 @@ export default function Home() {
   };
 
   const handleSolveOptimization = () => {
-    const solvers: Partial<Record<Algorithm, Solver>> = {
+    setGaDebugByShift(null);
+
+    if (selectedAlgorithm === 'genetic') {
+      const isolated = findIsolatedRoomIds(rooms, doors);
+      if (isolated.length > 0) {
+        setSolveResult(null);
+        setCurrentResultIndex(0);
+        setSolveDescription(
+          `Impossible to cover all rooms: room(s) ${isolated.join(
+            ", "
+          )} have no doors. Add at least one door connected to each room.`
+        );
+        return;
+      }
+    }
+
+    const solverByAlg: Partial<Record<Algorithm, Solver>> = {
       greedy: new GreedySolver(),
       genetic: new GeneticSolver(),
     };
-    const solver = solvers[selectedAlgorithm];
+
+    const solver = solverByAlg[selectedAlgorithm];
     if (!solver) {
       alert(`Algorithm "${selectedAlgorithm}" not yet implemented.`);
       return;
     }
-    
-    const solveInput: SolveInput =
-      selectedAlgorithm === 'greedy'
-        ? { rooms, doors, algorithm: 'greedy' }
-        : { rooms, doors, algorithm: 'genetic', nbrOfShifts: 5, shiftsPriorities: [] };
-    
-    const output = solver.solve(solveInput);
-    setSolveResult(output);
-    // Use the first result from the output
-    const guardDoorIds = output.results[0]?.guardDoorIds || [];
-    setSolveDescription(formatSolveOutputDescription(guardDoorIds, doors));
+
+    const solveInput: SolveInput = (() => {
+      if (selectedAlgorithm === 'greedy') {
+        return { rooms, doors, algorithm: 'greedy' };
+      }
+
+      const cfg = geneticConfig ?? {
+        nbrOfShifts: 1,
+        shiftsPriorities: [Array(rooms.length).fill(0)],
+      };
+
+      return {
+        rooms,
+        doors,
+        algorithm: 'genetic',
+        nbrOfShifts: cfg.nbrOfShifts,
+        shiftsPriorities: normalizeShiftsPriorities(rooms, cfg.nbrOfShifts, cfg.shiftsPriorities),
+      };
+    })();
+
+    try {
+      const output = solver.solve(solveInput);
+
+      setSolveResult(output);
+      setCurrentResultIndex(0);
+
+      const guardDoorIds = output.results[0]?.guardDoorIds || [];
+      setSolveDescription(formatSolveOutputDescription(guardDoorIds, doors));
+
+      if (solver instanceof GeneticSolver) {
+        setGaDebugByShift(solver.getLastDebugByShift().map((s) => [...s]));
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setSolveResult(null);
+      setCurrentResultIndex(0);
+      setGaDebugByShift(null);
+      setSolveDescription(msg);
+    }
   };
+
+  const debugForCurrentShift = gaDebugByShift?.[currentResultIndex] ?? null;
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-slate-50 to-slate-100 portrait:flex portrait:flex-col landscape:flex landscape:flex-row">
@@ -306,15 +387,49 @@ export default function Home() {
         />
 
         <SolveResultDisplay solveDescription={solveDescription} />
+
+        {selectedAlgorithm === 'genetic' && debugForCurrentShift && (
+          <details className="mb-3 rounded border border-gray-200 bg-white px-3 py-2">
+            <summary className="cursor-pointer text-sm font-semibold text-gray-700">
+              GA debug (shift {currentResultIndex + 1}) — per generation
+            </summary>
+
+            <div className="mt-2 max-h-64 overflow-auto">
+              <table className="w-full text-xs">
+                <thead className="sticky top-0 bg-white">
+                  <tr className="text-left text-gray-600">
+                    <th className="py-1 pr-2">Gen</th>
+                    <th className="py-1 pr-2">Fitness</th>
+                    <th className="py-1 pr-2">Guards</th>
+                    <th className="py-1 pr-2">Covered</th>
+                  </tr>
+                </thead>
+                <tbody className="text-gray-800">
+                  {debugForCurrentShift.map((row) => (
+                    <tr key={row.generation} className="border-t border-gray-100">
+                      <td className="py-1 pr-2">{row.generation}</td>
+                      <td className="py-1 pr-2">{Math.round(row.fitness)}</td>
+                      <td className="py-1 pr-2">{row.guards}</td>
+                      <td className="py-1 pr-2">
+                        {row.coveredRooms}/{row.totalRooms}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </details>
+        )}
+
         <div className="flex-1 min-h-[300px] portrait:min-h-[400px]">
-          <Map
-            rooms={rooms}
-            doors={doors}
-            guardDoorIds={solveResult?.results[currentResultIndex]?.guardDoorIds ?? []}
-            onUpdateRoom={handleUpdateRoom}
-            onDeleteRoom={handleDeleteRoom}
-            onDeleteDoor={handleDeleteDoor}
-          />
+          <MuseumMap
+        rooms={rooms}
+        doors={doors}
+        guardDoorIds={solveResult?.results[currentResultIndex]?.guardDoorIds ?? []}
+        onUpdateRoom={handleUpdateRoom}
+        onDeleteRoom={handleDeleteRoom}
+        onDeleteDoor={handleDeleteDoor}
+      />
         </div>
 
         {/* Multi-result navigation */}
