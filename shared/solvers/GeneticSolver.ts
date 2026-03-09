@@ -589,39 +589,57 @@ export class GeneticSolver implements Solver {
     }
   }
 
-  // Prune: remove redundant doors while preserving full coverage.
-  private prune(genes: boolean[], roomCount: number, doorPairs: DoorRoomIdxPair[]): void {
-    if (!this.isFullyCovered(genes, roomCount, doorPairs)) return;
+    private prune(genes: boolean[], roomCount: number, doorPairs: DoorRoomIdxPair[]): void {
+    if (roomCount <= 0 || genes.length === 0) return;
 
+    // coverageCounts[r] = how many selected doors touch room r
+    const coverageCounts = new Int16Array(roomCount);
     const selected: number[] = [];
-    for (let i = 0; i < genes.length; i++) if (genes[i]) selected.push(i);
+
+    for (let i = 0; i < genes.length; i++) {
+        if (!genes[i]) continue;
+        selected.push(i);
+        const [a, b] = doorPairs[i];
+        if (a >= 0) coverageCounts[a]++;
+        if (b >= 0) coverageCounts[b]++;
+    }
+
+    // If not fully covered, don't prune.
+    for (let r = 0; r < roomCount; r++) {
+        if (coverageCounts[r] === 0) return;
+    }
 
     // Shuffle removal order
     for (let i = selected.length - 1; i > 0; i--) {
-      const j = (Math.random() * (i + 1)) | 0;
-      [selected[i], selected[j]] = [selected[j], selected[i]];
+        const j = (Math.random() * (i + 1)) | 0;
+        [selected[i], selected[j]] = [selected[j], selected[i]];
     }
 
+    // Incremental prune: removing a door only affects its two endpoints.
     for (const idx of selected) {
-      genes[idx] = false;
-      if (!this.isFullyCovered(genes, roomCount, doorPairs)) genes[idx] = true;
-    }
-  }
+        const [a, b] = doorPairs[idx];
+        if ((a >= 0 && coverageCounts[a] <= 1) || (b >= 0 && coverageCounts[b] <= 1)) {
+        continue; // would uncover a room
+        }
 
-  private isFullyCovered(genes: boolean[], roomCount: number, doorPairs: DoorRoomIdxPair[]): boolean {
+        genes[idx] = false;
+        if (a >= 0) coverageCounts[a]--;
+        if (b >= 0) coverageCounts[b]--;
+    }
+    }
+
+    private isFullyCovered(genes: boolean[], roomCount: number, doorPairs: DoorRoomIdxPair[]): boolean {
     if (roomCount <= 0) return true;
-    const covered = Array<boolean>(roomCount).fill(false);
-
+    const counts = new Int16Array(roomCount);
     for (let i = 0; i < genes.length; i++) {
-      if (!genes[i]) continue;
-      const [a, b] = doorPairs[i];
-      if (a >= 0) covered[a] = true;
-      if (b >= 0) covered[b] = true;
+        if (!genes[i]) continue;
+        const [a, b] = doorPairs[i];
+        if (a >= 0) counts[a]++;
+        if (b >= 0) counts[b]++;
     }
-
-    for (let r = 0; r < roomCount; r++) if (!covered[r]) return false;
+    for (let r = 0; r < roomCount; r++) if (counts[r] === 0) return false;
     return true;
-  }
+    }
 
   // ------------------------- Precompute helpers -------------------------
 
