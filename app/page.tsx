@@ -14,6 +14,7 @@ import { Room, Door, Algorithm, SolveOutput, SolveInput, Solver } from "@/shared
 import { GreedySolver } from "@/shared/solvers/GreedySolver";
 import { formatSolveOutputDescription } from "@/shared/utils/formatSolveOutputDescription";
 import { GeneticSolver, GenerationDebug } from "@/shared/solvers/GeneticSolver";
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip} from 'recharts';
 
 function normalizeShiftsPriorities(
   rooms: Room[],
@@ -27,7 +28,7 @@ function normalizeShiftsPriorities(
 }
 
 function findIsolatedRoomIds(rooms: Room[], doors: Door[]): number[] {
-  const incidentCountByRoomId = new Map<number, number>();
+  const incidentCountByRoomId = new globalThis.Map<number, number>();
   for (const r of rooms) incidentCountByRoomId.set(r.id, 0);
 
   for (const d of doors) {
@@ -38,6 +39,41 @@ function findIsolatedRoomIds(rooms: Room[], doors: Door[]): number[] {
   return rooms
     .filter((r) => (incidentCountByRoomId.get(r.id) ?? 0) === 0)
     .map((r) => r.id);
+}
+
+function GaTelemetryTooltip({
+  active,
+  payload,
+}: {
+  active?: boolean;
+  payload?: Array<{ payload: any }>;
+}) {
+  if (!active || !payload?.length) return null;
+  const d = payload[0].payload as {
+    generation: number;
+    feasible: boolean;
+    guards: number;
+    coveredRooms: number;
+    totalRooms: number;
+    metric: number;
+    metricLabel: string;
+  };
+
+  return (
+    <div className="rounded border border-gray-200 bg-white px-2 py-1 text-xs shadow-sm">
+      <div className="font-semibold text-gray-800">Gen {d.generation}</div>
+      <div className="text-gray-700">
+        {d.feasible ? "feasible" : "infeasible"}
+      </div>
+      <div className="text-gray-700">
+        Covered: {d.coveredRooms}/{d.totalRooms}
+      </div>
+      <div className="text-gray-700">Guards: {d.guards}</div>
+      <div className="text-gray-800 font-semibold">
+        {d.metricLabel}: {d.metric}
+      </div>
+    </div>
+  );
 }
 
 export default function Home() {
@@ -346,6 +382,24 @@ export default function Home() {
 
   const debugForCurrentShift = gaDebugByShift?.[currentResultIndex] ?? null;
 
+  const chartData =
+    debugForCurrentShift?.map((row) => {
+      const feasible = (row as any).feasible === true; // safe if old rows exist
+      const guards = Number.isFinite((row as any).guards) ? (row as any).guards : 0;
+      const coveredRooms = Number.isFinite((row as any).coveredRooms) ? (row as any).coveredRooms : 0;
+      const totalRooms = Number.isFinite((row as any).totalRooms) ? (row as any).totalRooms : 0;
+      const metric = feasible ? guards : coveredRooms;
+      return {
+        generation: (row as any).generation ?? 0,
+        feasible,
+        guards,
+        coveredRooms,
+        totalRooms,
+        metric,
+        metricLabel: feasible ? "Guards (feasible)" : "Covered rooms (infeasible)",
+      };
+    }) ?? [];
+
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-slate-50 to-slate-100 portrait:flex portrait:flex-col landscape:flex landscape:flex-row">
       {/* Left Panel */}
@@ -388,43 +442,31 @@ export default function Home() {
 
         <SolveResultDisplay solveDescription={solveDescription} />
 
-        {selectedAlgorithm === 'genetic' && debugForCurrentShift && (
-          <details className="mb-3 rounded border border-gray-200 bg-white px-3 py-2">
-            <summary className="cursor-pointer text-sm font-semibold text-gray-700">
-              GA debug (shift {currentResultIndex + 1}) — per generation
-            </summary>
-
-            <div className="mt-2 max-h-64 overflow-auto">
-              <table className="w-full text-xs">
-                <thead className="sticky top-0 bg-white">
-                  <tr className="text-left text-gray-600">
-                    <th className="py-1 pr-2">Gen</th>
-                    <th className="py-1 pr-2">Fitness</th>
-                    <th className="py-1 pr-2">Guards</th>
-                    <th className="py-1 pr-2">Covered</th>
-                  </tr>
-                </thead>
-                <tbody className="text-gray-800">
-                  {debugForCurrentShift.map((row) => (
-                    <tr key={row.generation} className="border-t border-gray-100">
-                      <td className="py-1 pr-2">{row.generation}</td>
-                      <td className="py-1 pr-2">
-                        {Number.isFinite(row.fitness) ? Math.round(row.fitness) : '—'}
-                      </td>
-                      <td className="py-1 pr-2">{row.guards}</td>
-                      <td className="py-1 pr-2">
-                        {row.coveredRooms}/{row.totalRooms}
-                      </td>
-
-                      <td className="py-1 pr-2 max-w-[420px] truncate" title={row.scoreSummary}>
-                        {row.scoreSummary ?? '—'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        {selectedAlgorithm === "genetic" && chartData.length > 0 && (
+          <div className="mb-3 rounded border border-gray-200 bg-white px-3 py-2">
+            <div className="text-sm font-semibold text-gray-700">
+              GA telemetry (best-so-far)
             </div>
-          </details>
+            <div className="mt-2 h-44 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="generation" tickLine={false} axisLine={false} />
+                  <YAxis tickLine={false} axisLine={false} />
+                  <Tooltip content={<GaTelemetryTooltip />} />
+                  <Line
+                    type="monotone"
+                    dataKey="metric"
+                    dot={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-1 text-xs text-gray-500">
+              Y shows <span className="font-semibold">Covered rooms</span> until feasible, then switches to{" "}
+              <span className="font-semibold">Guards</span> to visualize pruning.
+            </div>
+          </div>
         )}
 
         <div className="flex-1 min-h-[300px] portrait:min-h-[400px]">
