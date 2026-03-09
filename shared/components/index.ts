@@ -1,3 +1,5 @@
+export { default as Button } from './Button';
+export { default as NumberInputBox } from './NumberInputBox';
 export { default as Map } from './Map';
 export { default as RoomNode } from './RoomNode';
 export { default as DoorEdge } from './DoorEdge';

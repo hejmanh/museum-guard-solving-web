@@ -427,7 +427,7 @@ export default function Home() {
       </div>
 
       {/* Right Panel - Map View */}
-      <div className="portrait:w-full portrait:h-[60vh] landscape:flex-1 landscape:h-screen p-3 sm:p-6 flex flex-col bg-gray-50">
+      <div className="portrait:w-full portrait:h-[60vh] portrait:overflow-y-auto landscape:flex-1 landscape:h-screen landscape:overflow-y-auto p-3 sm:p-6 flex flex-col bg-gray-50">
         {/* Top Control Bar */}
         <ControlBar
           selectedAlgorithm={selectedAlgorithm}
@@ -469,7 +469,7 @@ export default function Home() {
           </div>
         )}
 
-        <div className="flex-1 min-h-[300px] portrait:min-h-[400px]">
+        <div className="h-100 sm:h-125 portrait:h-90 shrink-0">
           <MuseumMap
         rooms={rooms}
         doors={doors}
