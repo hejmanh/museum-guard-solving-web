@@ -408,10 +408,16 @@ export default function Home() {
                   {debugForCurrentShift.map((row) => (
                     <tr key={row.generation} className="border-t border-gray-100">
                       <td className="py-1 pr-2">{row.generation}</td>
-                      <td className="py-1 pr-2">{Math.round(row.fitness)}</td>
+                      <td className="py-1 pr-2">
+                        {Number.isFinite(row.fitness) ? Math.round(row.fitness) : '—'}
+                      </td>
                       <td className="py-1 pr-2">{row.guards}</td>
                       <td className="py-1 pr-2">
                         {row.coveredRooms}/{row.totalRooms}
+                      </td>
+
+                      <td className="py-1 pr-2 max-w-[420px] truncate" title={row.scoreSummary}>
+                        {row.scoreSummary ?? '—'}
                       </td>
                     </tr>
                   ))}
