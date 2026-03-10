@@ -1,3 +1,4 @@
+import Button from './Button';
 import { Algorithm } from "@/shared/types";
 
 interface ControlBarProps {
@@ -5,9 +6,10 @@ interface ControlBarProps {
   onAlgorithmChange: (algorithm: Algorithm) => void;
   onRandomGraph: () => void;
   onAddRoom: () => void;
-  onAddDoor: () => void;
   onSolve: () => void;
   onReset: () => void;
+  onUndo: () => void;
+  canUndo: boolean;
   onGeneticConfig?: () => void;
 }
 
@@ -16,31 +18,23 @@ export default function ControlBar({
   onAlgorithmChange,
   onRandomGraph,
   onAddRoom,
-  onAddDoor,
   onSolve,
   onReset,
+  onUndo,
+  canUndo,
   onGeneticConfig,
 }: ControlBarProps) {
   return (
     <div className="flex portrait:justify-center landscape:justify-end gap-1 sm:gap-2 mb-2 sm:mb-4 flex-wrap">
-      <button
-        onClick={onRandomGraph}
-        className="px-2 sm:px-3 py-1 sm:py-2 bg-purple-500 text-white text-xs sm:text-sm font-semibold rounded hover:bg-purple-600 transition-colors"
-      >
+      <Button size="responsive" variant="secondary" onClick={onUndo} disabled={!canUndo}>
+        Undo
+      </Button>
+      <Button size="responsive" variant="purple" onClick={onRandomGraph}>
         Random Graph
-      </button>
-      <button
-        onClick={onAddRoom}
-        className="px-2 sm:px-3 py-1 sm:py-2 bg-blue-500 text-white text-xs sm:text-sm font-semibold rounded hover:bg-blue-600 transition-colors"
-      >
+      </Button>
+      <Button size="responsive" variant="primary" onClick={onAddRoom}>
         Add Room
-      </button>
-      <button
-        onClick={onAddDoor}
-        className="px-2 sm:px-3 py-1 sm:py-2 bg-blue-500 text-white text-xs sm:text-sm font-semibold rounded hover:bg-blue-600 transition-colors"
-      >
-        Add Door
-      </button>
+      </Button>
       <select
         value={selectedAlgorithm}
         onChange={(e) => onAlgorithmChange(e.target.value as Algorithm)}
@@ -50,25 +44,16 @@ export default function ControlBar({
         <option value="genetic">Genetic</option>
       </select>
       {selectedAlgorithm === 'genetic' && (
-        <button
-          onClick={onGeneticConfig}
-          className="px-2 sm:px-3 py-1 sm:py-2 bg-yellow-500 text-white text-xs sm:text-sm font-semibold rounded hover:bg-yellow-600 transition-colors"
-        >
+        <Button size="responsive" variant="warning" onClick={onGeneticConfig}>
           Genetic Config
-        </button>
+        </Button>
       )}
-      <button
-        onClick={onSolve}
-        className="px-2 sm:px-3 py-1 sm:py-2 bg-emerald-500 text-white text-xs sm:text-sm font-semibold rounded hover:bg-emerald-600 transition-colors"
-      >
+      <Button size="responsive" variant="success" onClick={onSolve}>
         Solve
-      </button>
-      <button
-        onClick={onReset}
-        className="px-2 sm:px-3 py-1 sm:py-2 bg-red-500 text-white text-xs sm:text-sm font-semibold rounded hover:bg-red-600 transition-colors"
-      >
+      </Button>
+      <Button size="responsive" variant="danger" onClick={onReset}>
         Reset
-      </button>
+      </Button>
     </div>
   );
 }

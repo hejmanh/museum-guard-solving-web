@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import MuseumMap from "@/shared/components/Map";
 import DoorList from "@/shared/components/DoorList";
 import ControlBar from "@/shared/components/ControlBar";
@@ -88,6 +88,28 @@ export default function Home() {
   const [solveResult, setSolveResult] = useState<SolveOutput | null>(null);
   const [solveDescription, setSolveDescription] = useState<string | null>(null);
 
+  // Undo history
+  const historyRef = useRef<Array<{ rooms: Room[]; doors: Door[] }>>([]);
+  const pushHistory = () => {
+    historyRef.current = [...historyRef.current.slice(-19), { rooms: [...rooms], doors: [...doors] }];
+  };
+  const [historySize, setHistorySize] = useState(0);
+  const handleUndo = () => {
+    if (historyRef.current.length === 0) return;
+    const prev = historyRef.current[historyRef.current.length - 1];
+    historyRef.current = historyRef.current.slice(0, -1);
+    setHistorySize(historyRef.current.length);
+    setRooms(prev.rooms);
+    setDoors(prev.doors);
+    setSolveResult(null);
+    setSolveDescription(null);
+    setGaDebugByShift(null);
+    setPendingRoomId(null);
+  };
+
+  // Add-door-by-click state
+  const [pendingRoomId, setPendingRoomId] = useState<number | null>(null);
+
   // Genetic algorithm UI state
   const [showGeneticModal, setShowGeneticModal] = useState(false);
   const [showShiftsModal, setShowShiftsModal] = useState(false);
@@ -105,6 +127,8 @@ export default function Home() {
   }, [currentResultIndex, solveResult, doors]);
 
   const handleAddRoom = () => {
+    pushHistory();
+    setHistorySize(historyRef.current.length);
     setSolveResult(null);
     setSolveDescription(null);
     setGaDebugByShift(null);
@@ -126,27 +150,20 @@ export default function Home() {
     setRooms([...rooms, newRoom]);
   };
 
-  const handleAddDoorFromButton = () => {
-    const room1Input = prompt('Enter first room number:');
-    const room2Input = prompt('Enter second room number:');
-
-    if (room1Input && room2Input) {
-      const room1Id = parseInt(room1Input);
-      const room2Id = parseInt(room2Input);
-
-      if (!isNaN(room1Id) && !isNaN(room2Id)) {
-        handleAddDoor(room1Id, room2Id);
-      } else {
-        alert('Please enter valid room numbers');
+  const handleRoomSelect = (roomId: number) => {
+    if (pendingRoomId === null) {
+      setPendingRoomId(roomId);
+    } else {
+      if (pendingRoomId === roomId) {
+        setPendingRoomId(null);
+        return;
       }
+      handleAddDoor(pendingRoomId, roomId);
+      setPendingRoomId(null);
     }
   };
 
   const handleAddDoor = (room1Id: number, room2Id: number) => {
-    setSolveResult(null);
-    setSolveDescription(null);
-    setGaDebugByShift(null);
-
     const room1Exists = rooms.some((r) => r.id === room1Id);
     const room2Exists = rooms.some((r) => r.id === room2Id);
 
@@ -172,6 +189,11 @@ export default function Home() {
       return;
     }
 
+    pushHistory();
+    setHistorySize(historyRef.current.length);
+    setSolveResult(null);
+    setSolveDescription(null);
+    setGaDebugByShift(null);
     const newDoor: Door = {
       id: nextDoorId,
       room1Id,
@@ -186,9 +208,12 @@ export default function Home() {
   };
 
   const handleDeleteRoom = (id: number) => {
+    pushHistory();
+    setHistorySize(historyRef.current.length);
     setSolveResult(null);
     setSolveDescription(null);
     setGaDebugByShift(null);
+    setPendingRoomId(null);
 
     setRooms(rooms.filter((room) => room.id !== id));
     // Also delete doors connected to this room
@@ -196,6 +221,8 @@ export default function Home() {
   };
 
   const handleDeleteDoor = (id: number) => {
+    pushHistory();
+    setHistorySize(historyRef.current.length);
     setSolveResult(null);
     setSolveDescription(null);
     setGaDebugByShift(null);
@@ -237,6 +264,8 @@ export default function Home() {
     setNextRoomId(roomCount + 1);
     setNextDoorId(doorId);
 
+    historyRef.current = [];
+    setHistorySize(0);
     setSolveResult(null);
     setSolveDescription(null);
     setShowGeneticModal(false);
@@ -244,6 +273,7 @@ export default function Home() {
     setGeneticConfig(null);
     setCurrentResultIndex(0);
     setGaDebugByShift(null);
+    setPendingRoomId(null);
   };
 
   const handleReset = () => {
@@ -255,6 +285,8 @@ export default function Home() {
     setNextRoomId(3);
     setNextDoorId(1);
     setSelectedAlgorithm('greedy');
+    historyRef.current = [];
+    setHistorySize(0);
     setSolveResult(null);
     setSolveDescription(null);
     setShowGeneticModal(false);
@@ -262,6 +294,7 @@ export default function Home() {
     setGeneticConfig(null);
     setCurrentResultIndex(0);
     setGaDebugByShift(null);
+    setPendingRoomId(null);
   };
 
   const handleAlgorithmChange = (algorithm: Algorithm) => {
@@ -434,9 +467,10 @@ export default function Home() {
           onAlgorithmChange={handleAlgorithmChange}
           onRandomGraph={handleRandomGraph}
           onAddRoom={handleAddRoom}
-          onAddDoor={handleAddDoorFromButton}
           onSolve={handleSolveOptimization}
           onReset={handleReset}
+          onUndo={handleUndo}
+          canUndo={historySize > 0}
           onGeneticConfig={handleGeneticConfigButton}
         />
 
@@ -471,13 +505,15 @@ export default function Home() {
 
         <div className="h-100 sm:h-125 portrait:h-90 shrink-0">
           <MuseumMap
-        rooms={rooms}
-        doors={doors}
-        guardDoorIds={solveResult?.results[currentResultIndex]?.guardDoorIds ?? []}
-        onUpdateRoom={handleUpdateRoom}
-        onDeleteRoom={handleDeleteRoom}
-        onDeleteDoor={handleDeleteDoor}
-      />
+            rooms={rooms}
+            doors={doors}
+            guardDoorIds={solveResult?.results[currentResultIndex]?.guardDoorIds ?? []}
+            onUpdateRoom={handleUpdateRoom}
+            onDeleteRoom={handleDeleteRoom}
+            onDeleteDoor={handleDeleteDoor}
+            onSelectRoom={handleRoomSelect}
+            selectedRoomId={pendingRoomId}
+          />
         </div>
 
         {/* Multi-result navigation */}

@@ -11,6 +11,8 @@ interface MapProps {
   onUpdateRoom: (id: number, updates: Partial<Room>) => void;
   onDeleteRoom: (id: number) => void;
   onDeleteDoor: (id: number) => void;
+  onSelectRoom?: (id: number) => void;
+  selectedRoomId?: number | null;
 }
 
 const noop = () => {};
@@ -23,6 +25,8 @@ export default function Map(props?: Partial<MapProps>) {
   const onUpdateRoom = props?.onUpdateRoom ?? noop;
   const onDeleteRoom = props?.onDeleteRoom ?? noop;
   const onDeleteDoor = props?.onDeleteDoor ?? noop;
+  const onSelectRoom = props?.onSelectRoom;
+  const selectedRoomId = props?.selectedRoomId ?? null;
 
   const ok =
     Array.isArray(props?.rooms) &&
@@ -77,6 +81,8 @@ export default function Map(props?: Partial<MapProps>) {
           room={room}
           onUpdate={onUpdateRoom}
           onDelete={onDeleteRoom}
+          onSelect={onSelectRoom}
+          isSelected={selectedRoomId === room.id}
         />
       ))}
     </div>
