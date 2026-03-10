@@ -1,5 +1,7 @@
 'use client';
 
+import { useRef, useEffect } from 'react';
+
 interface GeneticConfigModalProps {
   isOpen: boolean;
   onYes: () => void;
@@ -7,10 +9,31 @@ interface GeneticConfigModalProps {
 }
 
 export default function GeneticConfigModal({ isOpen, onYes, onNo }: GeneticConfigModalProps) {
+  const yesRef = useRef<HTMLButtonElement>(null);
+  const noRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (isOpen) yesRef.current?.focus();
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+      e.preventDefault();
+      if (document.activeElement === yesRef.current) {
+        noRef.current?.focus();
+      } else {
+        yesRef.current?.focus();
+      }
+    }
+  };
+
   return (
-    <div className="fixed inset-0 bg-transparent flex items-center justify-center z-50">
+    <div
+      className="fixed inset-0 bg-transparent flex items-center justify-center z-50"
+      onKeyDown={handleKeyDown}
+    >
       <div className="bg-white rounded-lg p-6 max-w-lg w-full mx-4 shadow-lg">
         <h2 className="text-lg font-bold text-gray-800 mb-4 text-center">Configure Genetic Algorithm</h2>
         <p className="text-gray-700 mb-6">
@@ -18,12 +41,14 @@ export default function GeneticConfigModal({ isOpen, onYes, onNo }: GeneticConfi
         </p>
         <div className="flex gap-4 justify-center">
           <button
+            ref={yesRef}
             onClick={onYes}
             className="px-4 py-2 bg-blue-500 text-white font-semibold rounded hover:bg-blue-600 transition-colors w-auto"
           >
             Yes
           </button>
           <button
+            ref={noRef}
             onClick={onNo}
             className="px-4 py-2 bg-gray-500 text-white font-semibold rounded hover:bg-gray-600 transition-colors w-auto"
           >

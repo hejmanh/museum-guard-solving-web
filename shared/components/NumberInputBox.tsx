@@ -9,6 +9,7 @@ interface NumberInputBoxProps {
   label?: string;
   size?: NumberInputSize;
   className?: string;
+  autoFocus?: boolean;
 }
 
 const sizeClasses: Record<NumberInputSize, string> = {
@@ -29,6 +30,7 @@ export default function NumberInputBox({
   label,
   size = 'md',
   className,
+  autoFocus,
 }: NumberInputBoxProps) {
   const sizeClass = sizeClasses[size];
   const finalClassName = className || `${sizeClass} ${baseClasses}`;
@@ -46,6 +48,7 @@ export default function NumberInputBox({
         max={max}
         placeholder={placeholder}
         value={value ?? ''}
+        autoFocus={autoFocus}
         onChange={(e) => {
           const parsed = parseInt(e.target.value, 10);
           onChange(isNaN(parsed) ? null : parsed);

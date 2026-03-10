@@ -76,7 +76,7 @@ export default function ShiftsAndPrioritiesModal({
           </svg>
         </Button>
         {configStep === 'shifts' ? (
-          <>
+          <form onSubmit={(e) => { e.preventDefault(); handleConfirmShifts(); }}>
             <h2 className="text-lg font-bold text-gray-800 mb-4">Configure Number of Shifts</h2>
             <div className="mb-6">
               <NumberInputBox
@@ -86,6 +86,7 @@ export default function ShiftsAndPrioritiesModal({
                 min={2}
                 max={20}
                 placeholder="Enter number (2–20)"
+                autoFocus
               />
               {shiftsError && (
                 <p className="text-red-500 text-sm mt-1">{shiftsError}</p>
@@ -93,13 +94,13 @@ export default function ShiftsAndPrioritiesModal({
             </div>
             <div className="flex gap-4 justify-center">
               <Button
-                onClick={handleConfirmShifts}
+                type="submit"
                 variant="primary"
               >
                 Next
               </Button>
             </div>
-          </>
+          </form>
         ) : (
           <>
             <h2 className="text-lg font-bold text-gray-800 mb-4">Configure Room Priorities by Shift</h2>
