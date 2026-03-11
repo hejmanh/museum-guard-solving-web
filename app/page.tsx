@@ -438,8 +438,10 @@ export default function Home() {
         onNo={handleGeneticConfigNo}
       />
       <ShiftsAndPrioritiesModal
+        key={String(showShiftsModal)}
         isOpen={showShiftsModal}
         rooms={rooms}
+        initialConfig={geneticConfig}
         onConfirm={handleShiftsAndPrioritiesConfirm}
         onClose={handleShiftsAndPrioritiesClose}
       />

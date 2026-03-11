@@ -10,6 +10,7 @@ interface NumberInputBoxProps {
   size?: NumberInputSize;
   className?: string;
   autoFocus?: boolean;
+  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
 }
 
 const sizeClasses: Record<NumberInputSize, string> = {
@@ -31,6 +32,7 @@ export default function NumberInputBox({
   size = 'md',
   className,
   autoFocus,
+  onKeyDown,
 }: NumberInputBoxProps) {
   const sizeClass = sizeClasses[size];
   const finalClassName = className || `${sizeClass} ${baseClasses}`;
@@ -49,6 +51,7 @@ export default function NumberInputBox({
         placeholder={placeholder}
         value={value ?? ''}
         autoFocus={autoFocus}
+        onKeyDown={onKeyDown}
         onChange={(e) => {
           const parsed = parseInt(e.target.value, 10);
           onChange(isNaN(parsed) ? null : parsed);

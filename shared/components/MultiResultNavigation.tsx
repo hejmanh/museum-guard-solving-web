@@ -19,7 +19,7 @@ export default function MultiResultNavigation({ current, total, onPrev, onNext }
         ◀
       </button>
       <span className="text-sm sm:text-base font-semibold text-gray-700">
-        Result {current + 1} of {total}
+        Shift {current + 1} of {total}
       </span>
       <button
         onClick={onNext}

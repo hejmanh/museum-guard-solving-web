@@ -1,5 +1,6 @@
 export { default as Button } from './Button';
 export { default as NumberInputBox } from './NumberInputBox';
+export { default as SelectBox } from './SelectBox';
 export { default as Map } from './Map';
 export { default as RoomNode } from './RoomNode';
 export { default as DoorEdge } from './DoorEdge';
@@ -10,6 +11,9 @@ export { default as InstructionsSection } from './InstructionsSection';
 export { default as SolveResultDisplay } from './SolveResultDisplay';
 export { default as GaTelemetryTooltip } from './GaTelemetryTooltip';
 export { default as GaTelemetryChart } from './GaTelemetryChart';
+export { default as RoomMultiInput } from './RoomMultiInput';
+export { default as PriorityConfigStep } from './PriorityConfigStep';
+export { default as ShiftConfigStep } from './ShiftConfigStep';
 export { default as GeneticConfigModal } from './GeneticConfigModal';
 export { default as ShiftsAndPrioritiesModal } from './ShiftsAndPrioritiesModal';
 export { default as ShiftAndPriorityConfigSection } from './ShiftAndPriorityConfigSection';
