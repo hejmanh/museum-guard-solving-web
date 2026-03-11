@@ -5,7 +5,7 @@ export default function IntroductionSection() {
     <>
       <section className="mb-2 sm:mb-4">
         <p className="text-xs sm:text-sm text-gray-700 leading-relaxed">
-          The <strong>Museum Guard Problem</strong> asks for the <strong>fewest guards</strong> needed to monitor every room. <br />
+          The Museum Guard Problem asks for the <strong>fewest guards</strong> needed to <strong>monitor every room</strong>. <br />
           Solve it here using <strong>Greedy</strong> or <strong>Genetic</strong> algorithms. Genetic mode supports <strong>room priorities</strong> and <strong>guard shifts</strong>.
         </p>
       </section>

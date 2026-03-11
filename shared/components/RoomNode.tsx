@@ -1,20 +1,26 @@
 'use client';
 
 import { Room } from '../types';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface RoomNodeProps {
   room: Room;
   onUpdate: (id: number, updates: Partial<Room>) => void;
   onDelete: (id: number) => void;
+  onSelect?: (id: number) => void;
+  isSelected?: boolean;
 }
 
-export default function RoomNode({ room, onUpdate, onDelete }: RoomNodeProps) {
+export default function RoomNode({ room, onUpdate, onDelete, onSelect, isSelected }: RoomNodeProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const hasDraggedRef = useRef(false);
+  const dragOriginRef = useRef({ x: 0, y: 0 });
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    hasDraggedRef.current = false;
+    dragOriginRef.current = { x: e.clientX, y: e.clientY };
     if ((e.target as HTMLElement).classList.contains('resize-handle')) {
       setIsResizing(true);
       setDragStart({ x: e.clientX, y: e.clientY });
@@ -26,11 +32,17 @@ export default function RoomNode({ room, onUpdate, onDelete }: RoomNodeProps) {
   };
 
   const handleDoubleClick = () => {
+    if (onSelect) return; // don't delete while in door-selection mode
     onDelete(room.id);
   };
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
+      const dx = e.clientX - dragOriginRef.current.x;
+      const dy = e.clientY - dragOriginRef.current.y;
+      if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
+        hasDraggedRef.current = true;
+      }
       if (isDragging) {
         onUpdate(room.id, {
           x: e.clientX - dragStart.x,
@@ -48,8 +60,12 @@ export default function RoomNode({ room, onUpdate, onDelete }: RoomNodeProps) {
     };
 
     const handleMouseUp = () => {
+      const wasClick = !hasDraggedRef.current && isDragging;
       setIsDragging(false);
       setIsResizing(false);
+      if (wasClick && onSelect) {
+        onSelect(room.id);
+      }
     };
 
     if (isDragging || isResizing) {
@@ -60,11 +76,15 @@ export default function RoomNode({ room, onUpdate, onDelete }: RoomNodeProps) {
         window.removeEventListener('mouseup', handleMouseUp);
       };
     }
-  }, [isDragging, isResizing, dragStart, room.id, room.width, room.height, onUpdate]);
+  }, [isDragging, isResizing, dragStart, room.id, room.width, room.height, onUpdate, onSelect]);
 
   return (
     <div
-      className="absolute border-1 border-gray-400 rounded-md bg-gray-100 cursor-move flex items-center justify-center text-gray-700 font-semibold select-none"
+      className={`absolute border-1 rounded-md cursor-move flex items-center justify-center font-semibold select-none transition-colors ${
+        isSelected
+          ? 'border-blue-500 bg-blue-200 text-blue-800 ring-2 ring-blue-400'
+          : 'border-gray-400 bg-gray-100 text-gray-700'
+      }`}
       style={{
         left: `${room.x}px`,
         top: `${room.y}px`,
