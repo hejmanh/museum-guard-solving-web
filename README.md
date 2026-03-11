@@ -1,36 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Museum Guard Solver
 
-## Getting Started
+Welcome! This web app helps you figure out the best way to place guards in a museum so that every room is watched, using as few guards as possible. On the UI, each room is shown as a square node, and each door is shown as an edge (a line) connecting two rooms. You can draw your own museum layout, connect rooms with doors, and see the results instantly.
 
-First, run the development server:
+## Try It Out
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Check out the live app here: https://museum-guard-solver.vercel.app/
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## What does this app do?
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Imagine you have a museum with lots of rooms and doors. You want to make sure every room is covered by at least one guard, but you also want to use as few guards as you can. This app helps you find the smartest way to do that.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+You can:
+- Design your own museum map
+- Set priorities for different rooms
+- See guard placements right on the map
 
-## Learn More
+## Why two algorithms?
 
-To learn more about Next.js, take a look at the following resources:
+We included both a Greedy algorithm and a Genetic algorithm because they each have their own strengths:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Greedy Algorithm
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+This method quickly picks the door that covers the most uncovered rooms, and repeats until all rooms are covered. It's very fast and always gives you the same answer. It's great for big museums or when you just want a quick solution. The answer is usually pretty good, but not always the absolute best.
 
-## Deploy on Vercel
+**Use Greedy when:**
+- You want results right away
+- Your museum has lots of rooms
+- You just need a solid, quick plan
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Genetic Algorithm
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This method tries lots of different combinations and "evolves" better solutions over time, kind of like natural selection. It takes longer to run, but it can find better answers, especially for tricky layouts. The results might be a little different each time you run it.
+
+**Use Genetic when:**
+- You want the best possible solution
+- You want to configure room priorities
+- Your layout is complicated and you want to see if you can do better than Greedy
+- You want to compare different possible solutions
+
+## Features
+
+- Draw and edit your own museum layout
+- Instantly see where guards should go
+- Set different priorities for rooms
+- Manage different shifts and coverage needs
+- Compare results from both algorithms
+- Watch the Genetic algorithm improve solutions over time
+
+Built with Next.js, TypeScript, and Vitest.
