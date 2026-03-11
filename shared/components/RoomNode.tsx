@@ -17,6 +17,13 @@ export default function RoomNode({ room, onUpdate, onDelete, onSelect, isSelecte
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const hasDraggedRef = useRef(false);
   const dragOriginRef = useRef({ x: 0, y: 0 });
+  const clickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (clickTimerRef.current) clearTimeout(clickTimerRef.current);
+    };
+  }, []);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     hasDraggedRef.current = false;
@@ -32,7 +39,10 @@ export default function RoomNode({ room, onUpdate, onDelete, onSelect, isSelecte
   };
 
   const handleDoubleClick = () => {
-    if (onSelect) return; // don't delete while in door-selection mode
+    if (clickTimerRef.current) {
+      clearTimeout(clickTimerRef.current);
+      clickTimerRef.current = null;
+    }
     onDelete(room.id);
   };
 
@@ -64,7 +74,11 @@ export default function RoomNode({ room, onUpdate, onDelete, onSelect, isSelecte
       setIsDragging(false);
       setIsResizing(false);
       if (wasClick && onSelect) {
-        onSelect(room.id);
+        if (clickTimerRef.current) clearTimeout(clickTimerRef.current);
+        clickTimerRef.current = setTimeout(() => {
+          clickTimerRef.current = null;
+          onSelect(room.id);
+        }, 250);
       }
     };
 
