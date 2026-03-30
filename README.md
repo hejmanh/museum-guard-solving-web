@@ -15,6 +15,10 @@ You can:
 - Set priorities for different rooms
 - See guard placements right on the map
 
+## Application Architecture
+
+![Application Architecture](docs/app_architecture.png)
+
 ## Why two algorithms?
 
 We included both a Greedy algorithm and a Genetic algorithm because they each have their own strengths:
